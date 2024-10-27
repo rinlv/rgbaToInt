@@ -26,12 +26,22 @@
             padding: 10px 20px;
             border-radius: 4px;
             cursor: pointer;
+            margin-right: 10px;
         }
         button:hover {
             background-color: #0052a3;
         }
-        #result {
+        #copyButton {
+            background-color: #28a745;
+        }
+        #copyButton:hover {
+            background-color: #218838;
+        }
+        .result-container {
+            position: relative;
             margin-top: 20px;
+        }
+        #result {
             padding: 15px;
             background-color: #f5f5f5;
             border-radius: 4px;
@@ -50,7 +60,10 @@
         <p>Enter RGBA strings (one per line) in format: rgba(71, 84, 103, 0.85)</p>
         <textarea id="input" placeholder="rgba(71, 84, 103, 0.85)"></textarea>
     </div>
-    <button onclick="convertColors()">Convert to Kotlin Colors</button>
+    <div>
+        <button onclick="convertColors()">Convert to Kotlin Colors</button>
+        <button id="copyButton" onclick="copyResult()" style="display: none;">Copy Result</button>
+    </div>
     <div id="error" class="error"></div>
     <div id="result"></div>
 
@@ -59,8 +72,10 @@
             const input = document.getElementById('input').value;
             const error = document.getElementById('error');
             const result = document.getElementById('result');
+            const copyButton = document.getElementById('copyButton');
             error.textContent = '';
             result.textContent = '';
+            copyButton.style.display = 'none';
 
             if (!input.trim()) {
                 error.textContent = 'Please enter at least one RGBA color.';
@@ -103,6 +118,35 @@
             // Display results - only showing the Kotlin color values
             const output = converted.map(({kotlin}) => kotlin).join('\n');
             result.textContent = output;
+
+            // Show copy button if we have results
+            if (output) {
+                copyButton.style.display = 'inline-block';
+                copyButton.textContent = 'Copy Result';
+            }
+        }
+
+        function copyResult() {
+            const result = document.getElementById('result');
+            const copyButton = document.getElementById('copyButton');
+
+            // Create a temporary textarea to copy the text
+            const textarea = document.createElement('textarea');
+            textarea.value = result.textContent;
+            document.body.appendChild(textarea);
+            textarea.select();
+
+            try {
+                document.execCommand('copy');
+                copyButton.textContent = 'Copied!';
+                setTimeout(() => {
+                    copyButton.textContent = 'Copy Result';
+                }, 2000);
+            } catch (err) {
+                console.error('Failed to copy text:', err);
+            }
+
+            document.body.removeChild(textarea);
         }
     </script>
 </body>
