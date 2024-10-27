@@ -55,10 +55,10 @@
     </style>
 </head>
 <body>
-    <h1>RGBA to Kotlin Color Integer Converter</h1>
+    <h1>RGBA/HEX to Kotlin Color Integer Converter</h1>
     <div class="input-group">
-        <p>Enter RGBA strings (one per line) in format: rgba(71, 84, 103, 0.85)</p>
-        <textarea id="input" placeholder="rgba(71, 84, 103, 0.85)"></textarea>
+        <p>Enter RGBA/HEX strings (one per line) in format: rgba(71, 84, 103, 0.85) or #FFFFFF4D</p>
+        <textarea id="input" placeholder="rgba(71, 84, 103, 0.85) or #FFFFFF4D"></textarea>
     </div>
     <div>
         <button onclick="convertColors()">Convert to Kotlin Colors</button>
@@ -87,29 +87,35 @@
                 try {
                     // Extract values using regex
                     const match = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
-                    if (!match) {
-                        throw new Error(`Invalid format for color: ${color}`);
+                    if (match) {
+                        const r = parseInt(match[1]);
+                        const g = parseInt(match[2]);
+                        const b = parseInt(match[3]);
+                        const a = match[4] ? Math.round(parseFloat(match[4]) * 255) : 255;
+
+                        // Validate ranges
+                        if (r < 0 || r > 255 || g < 0 || g > 255 || b < 0 || b > 255 || a < 0 || a > 255) {
+                            throw new Error(`Color values out of range in: ${color}`);
+                        }
+
+                        // Convert to hex strings individually to avoid negative numbers
+                        const aHex = a.toString(16).padStart(2, '0').toUpperCase();
+                        const rHex = r.toString(16).padStart(2, '0').toUpperCase();
+                        const gHex = g.toString(16).padStart(2, '0').toUpperCase();
+                        const bHex = b.toString(16).padStart(2, '0').toUpperCase();
+
+                        return {
+                            kotlin: `Color(0x${aHex}${rHex}${gHex}${bHex})`
+                        };
                     }
 
-                    const r = parseInt(match[1]);
-                    const g = parseInt(match[2]);
-                    const b = parseInt(match[3]);
-                    const a = match[4] ? Math.round(parseFloat(match[4]) * 255) : 255;
-
-                    // Validate ranges
-                    if (r < 0 || r > 255 || g < 0 || g > 255 || b < 0 || b > 255 || a < 0 || a > 255) {
-                        throw new Error(`Color values out of range in: ${color}`);
+                    if(isValidHexColor(color)) {
+                        return {
+                            kotlin: `Color(${hexToKotlinIntColor(color)})`
+                        };
                     }
 
-                    // Convert to hex strings individually to avoid negative numbers
-                    const aHex = a.toString(16).padStart(2, '0').toUpperCase();
-                    const rHex = r.toString(16).padStart(2, '0').toUpperCase();
-                    const gHex = g.toString(16).padStart(2, '0').toUpperCase();
-                    const bHex = b.toString(16).padStart(2, '0').toUpperCase();
-
-                    return {
-                        kotlin: `Color(0x${aHex}${rHex}${gHex}${bHex})`
-                    };
+                    throw new Error(`Invalid format for color: ${color}`);
                 } catch (e) {
                     throw new Error(`Error converting "${color}": ${e.message}`);
                 }
@@ -124,6 +130,31 @@
                 copyButton.style.display = 'inline-block';
                 copyButton.textContent = 'Copy Result';
             }
+        }
+
+        function isValidHexColor(hex) {
+            // Regular expression to match #RRGGBB or #AARRGGBB
+            const hexColorPattern = /^#?([A-Fa-f0-9]{6}|[A-Fa-f0-9]{8})$/;
+            return hexColorPattern.test(hex);
+        }
+
+        function hexToKotlinIntColor(hex) {
+            // Remove the `#` if it's there
+            hex = hex.replace(/^#/, "");
+
+            // Determine the format based on the length (either `RRGGBB` or `AARRGGBB`)
+            let argb;
+            if (hex.length === 6) {
+                // If only RGB is provided, assume full opacity (FF)
+                argb = `FF${hex}`;
+            } else if (hex.length === 8) {
+                argb = `${hex.substring(6)}${hex.substring(0, 6)}`;
+            } else {
+                throw new Error("Invalid hex color format. Use #RRGGBB or #AARRGGBB.");
+            }
+
+            // Parse as an integer with base 16 and return it in the format 0xAARRGGBB
+            return `0x${parseInt(argb, 16).toString(16).toUpperCase()}`;
         }
 
         function copyResult() {
