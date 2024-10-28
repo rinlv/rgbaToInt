@@ -154,7 +154,7 @@
             }
 
             // Parse as an integer with base 16 and return it in the format 0xAARRGGBB
-            return `0x${parseInt(argb, 16).toString(16).toUpperCase()}`;
+            return `0x${argb.toUpperCase()}`;
         }
 
         function copyResult() {
